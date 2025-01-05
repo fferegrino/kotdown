@@ -1,0 +1,192 @@
+---
+title: "Kotdown: A Static Site Generator Written in Kotlin"
+date: "2025-01-05"
+author: "Antonio Feregrino"
+---
+
+# Kotdown: A Static Site Generator Written in Kotlin
+
+In this post, we'll explore the development of a static site generator using Kotlin. This project, named Kotdown, is designed to process a folder of markdown files, parse their frontmatter, and generate corresponding HTML files. While this isn't a comprehensive guide to building a static site generator, it aims to showcase the technologies and libraries that make this task efficient and enjoyable in the Kotlin ecosystem.
+
+## Leveraging Spring Boot
+
+Although not strictly necessary for a static site generator, we've chosen to incorporate Spring Boot into this project. Spring Boot offers several advantages:
+
+1. It provides a robust framework for dependency injection and application configuration.
+2. It facilitates easier testing of the entire application.
+3. It offers a wealth of integrations with other libraries and tools.
+
+To kickstart our project, we utilized the [Spring Initializr](https://start.spring.io/) to set up the initial project structure and dependencies.
+
+## Command-Line Interface with Clikt
+
+For parsing command-line arguments, we've employed [Clikt](https://ajalt.github.io/clikt/), a powerful and intuitive library for building command-line interfaces in Kotlin.
+
+To include Clikt in your project, add the following dependency to your `build.gradle.kts` file:
+
+```kotlin
+implementation("com.github.ajalt.clikt:clikt:5.0.1")
+```
+
+Here's how we've set up our CLI options:
+
+```kotlin
+val output by option("-o", "--output").default("output")
+val content by option("-c", "--content").default("content")
+```
+
+In this code snippet, `by` is a Kotlin delegate that's used with the `option` function from Clikt. The `by` keyword delegates the property accessor to the `option` function, which returns a delegate that handles the parsing and storage of the command-line option.
+
+This setup allows users to specify custom output and content directories:
+
+```bash
+kotdown -o custom_output -c custom_content
+```
+
+If not specified, the program will use "output" and "content" as default values.
+
+## File Processing
+
+To process markdown files, we utilize Kotlin's powerful `File` API:
+
+```kotlin
+contentPath.walkBottomUp().forEach {
+    if(it.isDirectory) {
+        return@forEach
+    }
+    println(it.name)
+}
+```
+
+This code recursively walks through the content directory, skipping directories and processing only files.
+
+## Parsing Frontmatter and Markdown
+
+### Frontmatter Parsing
+
+For parsing YAML frontmatter, we use Jackson with its YAML module. Add these dependencies:
+
+```kotlin
+implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.2")
+implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2")
+```
+
+Define a data class to represent the frontmatter:
+
+```kotlin
+data class PostMetadataIn(val title: String, val author: String, val date: String)
+```
+
+Create an ObjectMapper configured for YAML:
+
+```kotlin
+val mapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
+```
+
+Parse the frontmatter:
+
+```kotlin
+val postMetadata = mapper.readValue(frontMatterBuilder.toString(), PostMetadataIn::class.java)
+```
+
+### Markdown Parsing
+
+For markdown parsing, we use the JetBrains Markdown library:
+
+```kotlin
+implementation("org.jetbrains:markdown:0.7.3")
+```
+
+Generate HTML from markdown:
+
+```kotlin
+val flavour = CommonMarkFlavourDescriptor()
+val parsedTree = MarkdownParser(flavour).buildMarkdownTreeFromString(contentSource)
+val contentHtml = HtmlGenerator(contentSource, parsedTree, flavour).generateHtml()
+```
+
+## HTML Generation with Thymeleaf
+
+For templating, we use Thymeleaf, a modern server-side Java template engine, additionally, I want to make use of the [Thymeleaf Layout Dialect](https://www.thymeleaf.org/doc/articles/layouts.html#thymeleaf-layout-dialect), which requires an additional dependency:
+
+```kotlin
+implementation("org.thymeleaf:thymeleaf:3.1.3.RELEASE")
+implementation("nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.3.0")
+```
+
+Set up a template resolver:
+
+```kotlin
+val resolver = FileTemplateResolver().apply {
+    prefix = "templates/"
+    suffix = ".html"
+    templateMode = TemplateMode.HTML
+    characterEncoding = "UTF-8"
+    isCacheable = false
+}
+```
+
+Create a Thymeleaf engine:
+
+```kotlin
+val templateEngine = TemplateEngine().apply {
+    addDialect(LayoutDialect())
+    setTemplateResolver(resolver) 
+}
+```
+
+Create a `post.html` template in the `templates/` directory:
+
+```html
+<!DOCTYPE html>
+<html>
+    <head>
+        <title th:text="${post.title}">Page Title</title>
+    </head>
+    <body>
+        <h1 th:text="${post.title}">Page Title</h1>
+        <div th:utext="${content}">Page Content</div>
+    </body>
+</html>
+```
+
+Render the template:
+
+```kotlin
+val context = Context().apply {
+    setVariable("post", postMetadata)
+    setVariable("content", contentHtml)
+}
+
+val outputHtml = templateEngine.process("post", context)
+```
+
+## Writing Output
+
+Finally, write the generated HTML to a file:
+
+```kotlin
+outputPath.writeText(outputHtml)
+```
+
+## Additional Considerations
+
+### Removing Spring Boot Banner
+
+To remove the default Spring Boot banner, add this to your `application.properties`:
+
+```plaintext
+spring.main.banner-mode=off
+```
+
+### SDK Management with SDKMAN
+
+For managing multiple SDK versions, consider using [SDKMAN!](https://sdkman.io/). It's similar to tools like nvm for Node.js or pyenv for Python, but tailored for the Java ecosystem. SDKMAN! allows you to easily switch between different versions of Java, Kotlin, Gradle, and many other JVM-based tools.
+
+## Conclusion
+
+This project demonstrates the power and flexibility of Kotlin for building a static site generator. By leveraging libraries like Clikt for CLI parsing, Jackson for YAML processing, JetBrains Markdown for markdown parsing, and Thymeleaf for templating, we've created a robust tool with relatively little code.
+
+The use of Spring Boot, while not strictly necessary, provides a solid foundation for expanding the project and adds conveniences like easy testing and dependency injection.
+
+Remember, this is just a starting point. There's plenty of room for enhancement, such as adding support for custom themes, implementing a watch mode for automatic rebuilds, or integrating with a web server for local preview. Happy coding!

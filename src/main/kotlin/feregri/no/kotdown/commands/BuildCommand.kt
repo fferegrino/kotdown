@@ -5,10 +5,8 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import feregri.no.kotdown.PostMetadataIn
+import feregri.no.kotdown.utils.MarkdownToHtml
 import feregri.no.kotdown.utils.readPost
-import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
-import org.intellij.markdown.html.HtmlGenerator
-import org.intellij.markdown.parser.MarkdownParser
 import org.springframework.stereotype.Component
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
@@ -17,7 +15,8 @@ import java.io.File
 @Component
 class BuildCommand(
     private val objectMapper: ObjectMapper,
-    private val templateEngine: TemplateEngine
+    private val templateEngine: TemplateEngine,
+    private val markdownToHtml: MarkdownToHtml
 ) : CliktCommand() {
     val output by option("-o", "--output").default("output")
     val content by option("-c", "--content").default("content")
@@ -39,9 +38,7 @@ class BuildCommand(
             val (frontMatter, rawContent) = readPost(it)
             val postMetadata = objectMapper.readValue(frontMatter, PostMetadataIn::class.java)
 
-            val flavour = CommonMarkFlavourDescriptor()
-            val parsedTree = MarkdownParser(flavour).buildMarkdownTreeFromString(rawContent)
-            val contentHtml = HtmlGenerator(rawContent, parsedTree, flavour).generateHtml()
+            val contentHtml = markdownToHtml.convert(rawContent)
 
             val context = Context().apply {
                 setVariable("post", postMetadata)
@@ -54,7 +51,5 @@ class BuildCommand(
 
             outputHtmlFile.writeText(outputHtml)
         }
-
-
     }
 }

@@ -23,5 +23,13 @@ fun readPost(file: File): Pair<String, String> {
         }
     }
 
+    if (frontMatterBuilder.isEmpty()) {
+        throw IllegalArgumentException("Front matter is empty")
+    }
+
+    if (contentBuilder.isEmpty()) {
+        throw IllegalArgumentException("Content is empty")
+    }
+
     return Pair(frontMatterBuilder.toString(), contentBuilder.toString())
 }

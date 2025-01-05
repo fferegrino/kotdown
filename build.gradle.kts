@@ -22,6 +22,7 @@ dependencies {
 	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.2")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2")
 	implementation("com.github.ajalt.clikt:clikt:5.0.1")
+	implementation("nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.3.0")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains:markdown:0.7.3")
 	implementation("org.springframework.boot:spring-boot-starter")
