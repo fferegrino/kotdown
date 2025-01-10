@@ -15,6 +15,8 @@ import org.thymeleaf.templatemode.TemplateMode
 import org.thymeleaf.templateresolver.FileTemplateResolver
 import java.io.File
 
+data class PostMetadataOut(val url: String, val title: String)
+
 @Component
 class BuildCommand(
     private val objectMapper: ObjectMapper,
@@ -48,6 +50,8 @@ class BuildCommand(
         println("Reading from $outputPath")
         println("Writing to $contentPath")
 
+        val outMetadataCollection = mutableListOf<PostMetadataOut>()
+
         contentPath.walkBottomUp().forEach {
             if (it.isDirectory) {
                 return@forEach
@@ -66,8 +70,18 @@ class BuildCommand(
             val outputHtml = templateEngine.process("post", context)
 
             val outputHtmlFile = File(outputPath, it.nameWithoutExtension + ".html")
-
+            outMetadataCollection.add(PostMetadataOut(outputHtmlFile.name, postMetadata.title))
             outputHtmlFile.writeText(outputHtml)
         }
+
+        val indexContext = Context().apply {
+            setVariable("posts", outMetadataCollection)
+        }
+
+        val indexHtml = templateEngine.process("index", indexContext)
+
+        val indexHtmlFile = File(outputPath, "index.html")
+
+        indexHtmlFile.writeText(indexHtml)
     }
 }

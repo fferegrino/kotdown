@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html layout:decorate="~{base}">
+<head>
+    <title>Posts</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <ul th:each="postMeta: ${posts}">
+        <li>
+            <a th:href="@{~/posts/{id}(id=${postMeta.url})}" th:text="${postMeta.title}">Post title</a>
+        </li>
+    </ul>
+</div>
+</body>
+</html>
