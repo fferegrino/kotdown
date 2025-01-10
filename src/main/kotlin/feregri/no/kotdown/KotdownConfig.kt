@@ -19,19 +19,4 @@ class KotdownConfig {
         return ObjectMapper(YAMLFactory()).registerKotlinModule()
     }
 
-    @Bean
-    fun templateEngine(): TemplateEngine {
-        val resolver = FileTemplateResolver().apply {
-            prefix = "templates/"
-            suffix = ".html"
-            templateMode = TemplateMode.HTML
-            characterEncoding = "UTF-8"
-            isCacheable = false
-        }
-
-        return TemplateEngine().apply {
-            addDialect(LayoutDialect())
-            setTemplateResolver(resolver)
-        }
-    }
 }

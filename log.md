@@ -142,3 +142,11 @@ val context = Context().apply {
 val outputHtml = templateEngine.process("post", context)
 println(outputHtml)
 ```
+
+## Access the resources folder as a File
+
+From StackOverflow: https://stackoverflow.com/a/3924722/605482
+
+```kotlin
+File( object {}.javaClass.getResource("/template/").file )
+```

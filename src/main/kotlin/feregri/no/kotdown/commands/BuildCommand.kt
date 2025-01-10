@@ -7,23 +7,41 @@ import com.github.ajalt.clikt.parameters.options.option
 import feregri.no.kotdown.PostMetadataIn
 import feregri.no.kotdown.utils.MarkdownToHtml
 import feregri.no.kotdown.utils.readPost
+import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect
 import org.springframework.stereotype.Component
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
+import org.thymeleaf.templatemode.TemplateMode
+import org.thymeleaf.templateresolver.FileTemplateResolver
 import java.io.File
 
 @Component
 class BuildCommand(
     private val objectMapper: ObjectMapper,
-    private val templateEngine: TemplateEngine,
+//    private val templateEngine: TemplateEngine,
     private val markdownToHtml: MarkdownToHtml
 ) : CliktCommand() {
     val output by option("-o", "--output").default("output")
     val content by option("-c", "--content").default("content")
+    val template by option("-t", "--template").default("")
 
     override fun run() {
         val outputPath = File(output)
         val contentPath = File(content)
+        val templatePath = if (template.isNotBlank()) File(template) else  File( object {}.javaClass.getResource("/template/").file )
+
+        val resolver = FileTemplateResolver().apply {
+            prefix = "${templatePath.absolutePath}/"
+            suffix = ".html"
+            templateMode = TemplateMode.HTML
+            characterEncoding = "UTF-8"
+            isCacheable = false
+        }
+
+        val templateEngine = TemplateEngine().apply {
+            addDialect(LayoutDialect())
+            setTemplateResolver(resolver)
+        }
 
         outputPath.mkdirs()
 
